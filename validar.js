@@ -4,53 +4,59 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function validaForm(e) {
-    event.preventDefault();
+    e.preventDefault();
     const form = this;
 
-    // Preparar datos del formulario para enviar
     const formData = new FormData(form);
-    formData.append(form.enviar.name, form.enviar.value);
+    if (form.enviar) {
+        formData.append(form.enviar.name, form.enviar.value);
+    }
 
     const xhr = new XMLHttpRequest();
     xhr.responseType = 'json';
 
-    // Configurar la solicitud
     xhr.open('POST', 'index.php', true);
-    xhr.setRequestHeader('Accept', 'application/json'); // Esperamos JSON de vuelta
-    xhr.send(formData);
+    xhr.setRequestHeader('Accept', 'application/json');
 
-    // Manejar la respuesta
     xhr.onload = function () {
-        form.classList.remove('was-validated');
         const response = xhr.response;
-        // Ajustar la validación en cada campo específico
+        form.classList.remove('was-validated');
+
+        // Limpiar errores anteriores
         Array.from(form.elements).forEach(input => {
-            if (response.errors[input.name]) {
-                const feedback = input.nextElementSibling;
-                feedback.textContent = response.errors[input.name];
-                feedback.style.display = 'block';
-                input.classList.add('is-invalid');
-                input.classList.remove('is-valid');
-            } else {
-                input.classList.remove('is-invalid');
-                input.classList.add('is-valid'); // Añadir is-valid si no hay errores
-                if (input.nextElementSibling) {
-                    feedback = input.nextElementSibling;
-                    feedback.textContent = "";
-                }
+            const feedback = input.parentElement.querySelector('.invalid-feedback');
+            if (feedback) {
+                feedback.textContent = '';
+                feedback.style.display = 'none';
             }
+            input.classList.remove('is-invalid', 'is-valid');
         });
+
+        // Mostrar errores nuevos si los hay
+        for (const name in response.errors) {
+            const input = form.elements[name];
+            if (input) {
+                const feedback = input.parentElement.querySelector('.invalid-feedback');
+                if (feedback) {
+                    feedback.textContent = response.errors[name];
+                    feedback.style.display = 'block';
+                }
+                input.classList.add('is-invalid');
+            }
+        }
+
+        // Si no hay errores, reenviar
         if (response.success) {
-            // alert('Registro completado con éxito.');
             form.submit();
         }
     };
 
-    // Manejar errores de red
     xhr.onerror = function () {
         console.error('Error en la red, no se pudo completar la solicitud.');
     };
+    // Enviamos el DNI como parámetro POST
+        const params = "accion=cuentasPorDni&dni=" + encodeURIComponent(dni);
+        xhr.send(params);
 
-    // Enviar la solicitud
     xhr.send(formData);
 }
