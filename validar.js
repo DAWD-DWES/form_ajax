@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById('registro');
     form.addEventListener("submit", validarFormulario);
-    // ✅ Limpiar error al teclear
+    // Limpiar error al teclear
     form.querySelectorAll("input").forEach(input => {
         input.addEventListener("input", () => {
             input.classList.remove("is-invalid");
