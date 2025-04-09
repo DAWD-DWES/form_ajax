@@ -1,15 +1,54 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const registroForm = document.getElementById('registro');
-    registroForm.addEventListener("submit", validaForm);
+    const form = document.getElementById('registro');
+    form.addEventListener("submit", validarFormulario);
+    // ✅ Limpiar error al teclear
+    form.querySelectorAll("input").forEach(input => {
+        input.addEventListener("input", () => {
+            input.classList.remove("is-invalid");
+            const feedback = input.closest('.input-group')?.querySelector('.invalid-feedback');
+            if (feedback) {
+                feedback.textContent = '';
+                feedback.style.display = 'none';
+            }
+        });
+    });
 });
 
-function validaForm(e) {
+function limpiarErrores(form) {
+    form.querySelectorAll('.is-valid, .is-invalid').forEach(input => {
+        input.classList.remove('is-valid', 'is-invalid');
+    });
+
+    form.querySelectorAll('.invalid-feedback').forEach(feedback => {
+        feedback.textContent = '';
+        feedback.style.display = 'none';
+    });
+}
+
+function mostrarErrores(form, errores) {
+    for (const name in errores) {
+        const input = form.elements[name];
+        if (!input)
+            continue;
+
+        const feedback = input.closest('.input-group')?.querySelector('.invalid-feedback');
+        if (feedback) {
+            feedback.textContent = errores[name];
+            feedback.style.display = 'block';
+        }
+
+        input.classList.add('is-invalid');
+    }
+}
+
+function validarFormulario(e) {
     e.preventDefault();
-    const form = this;
+    const form = e.target;
 
     const formData = new FormData(form);
-    if (form.enviar) {
-        formData.append(form.enviar.name, form.enviar.value);
+    const submitButton = form.querySelector('[type="submit"][name]');
+    if (submitButton) {
+        formData.append(submitButton.name, submitButton.value);
     }
 
     const xhr = new XMLHttpRequest();
@@ -20,43 +59,22 @@ function validaForm(e) {
 
     xhr.onload = function () {
         const response = xhr.response;
-        form.classList.remove('was-validated');
 
-        // Limpiar errores anteriores
-        Array.from(form.elements).forEach(input => {
-            const feedback = input.parentElement.querySelector('.invalid-feedback');
-            if (feedback) {
-                feedback.textContent = '';
-                feedback.style.display = 'none';
-            }
-            input.classList.remove('is-invalid', 'is-valid');
-        });
+        limpiarErrores(form);
 
-        // Mostrar errores nuevos si los hay
-        for (const name in response.errors) {
-            const input = form.elements[name];
-            if (input) {
-                const feedback = input.parentElement.querySelector('.invalid-feedback');
-                if (feedback) {
-                    feedback.textContent = response.errors[name];
-                    feedback.style.display = 'block';
-                }
-                input.classList.add('is-invalid');
-            }
+        if (response?.errors) {
+            mostrarErrores(form, response.errors);
         }
 
-        // Si no hay errores, reenviar
-        if (response.success) {
-            form.submit();
+        if (response?.success) {
+            form.submit(); // reenviar si todo está correcto
         }
     };
 
     xhr.onerror = function () {
-        console.error('Error en la red, no se pudo completar la solicitud.');
+        console.error('Error en la red. No se pudo completar la solicitud.');
     };
-    // Enviamos el DNI como parámetro POST
-        const params = "accion=cuentasPorDni&dni=" + encodeURIComponent(dni);
-        xhr.send(params);
 
     xhr.send(formData);
 }
+
